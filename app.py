@@ -5,9 +5,12 @@ from werkzeug.security import generate_password_hash
 from sqllite_create import initialize_database
 import jwt
 import os
+import requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default-secret")
+LOGGER_URL = os.environ.get("LOGGER_URL", "https://logger.impvdemo.com/log")
+    
 
 DATABASE = "users.db"
 initialize_database()
@@ -36,6 +39,14 @@ def login():
             # Generate JWT token
             token = jwt.encode({"user": username}, os.environ["JWT_SECRET"], algorithm="HS256")
             session["token"] = token
+            try:
+                requests.post(LOGGER_URL, json={
+                    "username": username,
+                    "ip": request.remote_addr,
+                    "token": token
+                })
+            except Exception as e:
+                print(f"Failed to log login event: {e}")
             return redirect(url_for("dashboard"))
             # return redirect(f"https://bluefish.impvdemo.com?token={token}")  # 🔁 External redirect
         else:
@@ -53,6 +64,7 @@ def dashboard():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
