@@ -9,7 +9,7 @@ import requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default-secret")
-LOGGER_URL = os.environ.get("LOGGER_URL", "https://logger.impvdemo.com/log")
+LOGGER_URL = os.environ.get("LOGGER_URL", "http://logger.impvdemo.com/log")
     
 
 DATABASE = "users.db"
