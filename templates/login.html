@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+<head><title>Login</title></head>
+<body>
+  <h2>Auth Microservice</h2>
+  {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+  <form method="POST">
+    <input name="username" placeholder="Username" required><br>
+    <input name="password" type="password" placeholder="Password" required><br>
+    <button type="submit">Login</button>
+  </form>
+</body>
+</html>
