@@ -2,12 +2,14 @@
 <html>
 <head>
   <title>Dashboard</title>
-  <meta http-equiv="refresh" content="5;url=https://bluefish.impvdemo.com?token={{ token }}">
+  <!-- <meta http-equiv="refresh" content="5;url=https://bluefish.impvdemo.com?token={{ token }}"> -->
 </head>
 <body>
   <h2>Welcome, {{ user }}!</h2>
     <p>You have successfully logged in.</p>
     <p>Your token is: <strong>{{ token }}</strong></p>
+  <p>Click below to see Logs</p>
+  <p><a href="/logs">View Logs</a></p>
   <p>Redirecting you to Bluefish in 5 seconds...</p>
   <a href="https://bluefish.impvdemo.com?token={{ token }}">Click here if not redirected</a>
     <p>logout <a href="/logout">here</a></p>

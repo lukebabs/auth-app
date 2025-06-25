@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head><title>User Logs</title></head>
+<body>
+  <p>User Logs (Page {{ page }} of {{ total_pages }})</p>
+  <ul>
+    {% for log in logs %}
+      <li>{{ log }}</li>
+    {% endfor %}
+  </ul>
+
+  <div style="margin-top:20px;">
+    {% if page > 1 %}
+      <a href="{{ url_for('view_logs', page=page-1) }}">Previous</a>
+    {% endif %}
+
+    {% if page < total_pages %}
+      {% if page > 1 %} | {% endif %}
+      <a href="{{ url_for('view_logs', page=page+1) }}">Next</a>
+    {% endif %}
+  </div>
+</body>
+</html>
