@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import os, jwt
-from datetime import datetime
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +16,7 @@ LOG_PATH = "logs/login_events.log"
 @app.route("/log", methods=["POST"])
 def log_event():
     data = request.json or {}
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     username = data.get("username", "unknown")
     ip = data.get("ip", "unknown")
     token_hash = hash(data.get("token", ""))
@@ -76,5 +76,5 @@ if __name__ == "__main__":
 # It requires the JWT_SECRET environment variable to be set for token validation.
 # Ensure you have Flask and PyJWT installed:
 # pip install Flask PyJWT python-dotenv
-# Usage:
-# 1. Set the JWT_SECRET environment variable:
+# Example usage:
+# Set the JWT_SECRET environment variable
