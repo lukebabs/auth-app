@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
-import os, jwt
+import os
+import jwt
 import time
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
+
 app.secret_key = os.environ.get("JWT_SECRET")
 JWT_SECRET = os.environ.get("JWT_SECRET")
 if not JWT_SECRET:
@@ -66,7 +68,9 @@ def get_logs():
     })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5001)))
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port)
+
 # logger/logger_service.py
 # SE Demo only
 # This file implements a simple Flask service to log user login events and retrieve logs.
