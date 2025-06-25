@@ -1,0 +1,47 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]  # or your target branch
+
+jobs:
+  deploy:
+    name: Deploy Both Services
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        export_default_credentials: true
+
+    - name: Deploy logger-service
+      run: |
+        gcloud builds submit ./logger \
+          --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/logger-service
+
+        gcloud run deploy logger-service \
+          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/logger-service \
+          --region ${{ secrets.GCP_REGION }} \
+          --platform managed \
+          --allow-unauthenticated \
+          --set-env-vars JWT_SECRET=impv-secret
+
+    - name: Deploy auth-app
+      run: |
+        LOGGER_URL=https://logger-service-${{ secrets.GCP_REGION }}-$(gcloud config get-value project).a.run.app/log
+
+        gcloud builds submit ./auth-app \
+          --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/auth-app
+
+        gcloud run deploy auth-app \
+          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/auth-app \
+          --region ${{ secrets.GCP_REGION }} \
+          --platform managed \
+          --allow-unauthenticated \
+          --set-env-vars JWT_SECRET=impv-secret,SECRET_KEY=impv-secret,LOGGER_URL=$LOGGER_URL
