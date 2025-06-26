@@ -15,7 +15,7 @@ app.secret_key = os.environ.get("JWT_SECRET")
 JWT_SECRET = os.environ.get("JWT_SECRET")
 if not JWT_SECRET:
     raise RuntimeError("JWT_SECRET is not set")
-LOGGER_URL = os.environ.get("LOGGER_URL", "http://localhost:5001/log")
+LOGGER_URL = os.environ.get("LOGGER_URL")
 
 DATABASE = "users.db"
 initialize_database()
@@ -79,9 +79,8 @@ def view_logs():
 
     page = int(request.args.get("page", 1))
     try:
-        print("DEBUG: Token in session:", session.get("token"))
         response = requests.get(
-            os.environ.get("LOGGER_URL", "http://localhost:5001") + "/logs",
+            os.environ.get("LOGGER_URL") + "/logs",
             params={"page": page, "per_page": 20},
             headers={"Authorization": f"Bearer {session['token']}"},
             timeout=3
