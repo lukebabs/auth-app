@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, g
+from flask import Flask, render_template, request, redirect, url_for, session, g, Response
 import sqlite3
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
@@ -100,6 +100,24 @@ def stream_logs_page():
     if "token" not in session:
         return redirect(url_for("login"))
     return render_template("stream.html", token=session["token"])
+
+@app.route("/logs/stream-proxy")
+def view_logs_stream_proxy():
+    if "token" not in session:
+        return "Unauthorized", 401
+
+    def generate():
+        headers = {"Authorization": f"Bearer {session['token']}"}
+        with requests.get(
+            os.environ["LOGGER_URL"].replace("/log", "/stream"),
+            headers=headers,
+            stream=True,
+        ) as r:
+            for line in r.iter_lines():
+                if line:
+                    yield line.decode("utf-8") + "\n"
+
+    return Response(generate(), mimetype="text/event-stream")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
