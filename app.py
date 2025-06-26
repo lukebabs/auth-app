@@ -95,5 +95,11 @@ def view_logs():
 
     return render_template("logs.html", logs=logs, page=page, total_pages=total_pages)
 
+@app.route("/logs/stream")
+def stream_logs_page():
+    if "token" not in session:
+        return redirect(url_for("login"))
+    return render_template("stream.html", token=session["token"])
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

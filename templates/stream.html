@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head><title>Live Logs</title></head>
+<body>
+  <h2>Streaming Logs (Live)</h2>
+  <ul id="log-container"></ul>
+
+  <script>
+    const token = "{{ token }}";
+    const logContainer = document.getElementById("log-container");
+    const eventSource = new EventSource("{{ url_for('view_logs_stream_proxy') }}");
+
+    eventSource.onmessage = function(e) {
+      const li = document.createElement("li");
+      li.textContent = e.data;
+      logContainer.appendChild(li);
+    };
+
+    eventSource.onerror = function(e) {
+      console.error("Stream error:", e);
+      eventSource.close();
+    };
+  </script>
+</body>
+</html>
