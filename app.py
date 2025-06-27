@@ -7,6 +7,9 @@ import os
 import requests
 import hashlib
 from dotenv import load_dotenv
+from collections import defaultdict
+from datetime import datetime
+import re
 
 load_dotenv()
 
@@ -175,6 +178,45 @@ def filter_logs():
     return render_template("logs_filter.html", logs=logs, page=page, total_pages=total_pages,
                            username=username, experiment_id=experiment_id, group=group)
 
+@app.route("/results")
+def results_dashboard():
+    if "token" not in session:
+        return redirect(url_for("login"))
+
+    try:
+        response = requests.get(
+            f"{LOGGER_URL}/logs/filter",
+            headers={"Authorization": f"Bearer {session['token']}"},
+            params={"per_page": 1000},
+            timeout=5
+        )
+        logs = response.json().get("logs", [])
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch logs: {e}")
+        logs = []
+
+    group_counts = defaultdict(int)
+    experiment_counts = defaultdict(int)
+    time_series = defaultdict(int)
+
+    for line in logs:
+        match = re.search(r"\[(.*?)\].*?user: .*? - group: (.*?) - experiment: (.*?) -", line)
+        if match:
+            ts_str, group, experiment = match.groups()
+            try:
+                date_key = datetime.fromisoformat(ts_str).date().isoformat()
+            except:
+                date_key = "unknown"
+            group_counts[group] += 1
+            experiment_counts[experiment] += 1
+            time_series[date_key] += 1
+
+    return render_template(
+        "results.html",
+        group_counts=dict(group_counts),
+        experiment_counts=dict(experiment_counts),
+        time_series=sorted(time_series.items())
+    )
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

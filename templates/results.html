@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+  <title>Login Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>Login Results Dashboard</h2>
+
+  <canvas id="groupChart" width="400" height="200"></canvas>
+  <canvas id="experimentChart" width="400" height="200"></canvas>
+  <canvas id="timeChart" width="600" height="250"></canvas>
+
+  <script>
+    const groupData = {{ group_counts | tojson }};
+    const experimentData = {{ experiment_counts | tojson }};
+    const timeSeries = {{ time_series | tojson }};
+
+    new Chart(document.getElementById('groupChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(groupData),
+        datasets: [{
+          label: 'Logins by Group',
+          data: Object.values(groupData),
+          backgroundColor: 'rgba(54, 162, 235, 0.5)'
+        }]
+      }
+    });
+
+    new Chart(document.getElementById('experimentChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(experimentData),
+        datasets: [{
+          label: 'Logins by Experiment',
+          data: Object.values(experimentData),
+          backgroundColor: 'rgba(255, 99, 132, 0.5)'
+        }]
+      }
+    });
+
+    new Chart(document.getElementById('timeChart'), {
+      type: 'line',
+      data: {
+        labels: timeSeries.map(x => x[0]),
+        datasets: [{
+          label: 'Logins over Time',
+          data: timeSeries.map(x => x[1]),
+          fill: true,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          tension: 0.2
+        }]
+      }
+    });
+  </script>
+</body>
+</html>
