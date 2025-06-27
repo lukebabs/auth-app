@@ -118,12 +118,21 @@ def view_logs_stream_proxy():
         return "Unauthorized", 401
 
     token = session["token"]
+    q_user = request.args.get("username", "")
+    q_exp = request.args.get("experiment_id", "")
+    q_group = request.args.get("group", "")
 
     def generate():
         headers = {"Authorization": f"Bearer {token}"}
+        params = {
+            "username": q_user,
+            "experiment_id": q_exp,
+            "group": q_group
+        }
         with requests.get(
-            f"{LOGGER_URL}/stream",
+            f"{LOGGER_URL}/stream/filter",
             headers=headers,
+            params=params,
             stream=True
         ) as r:
             for line in r.iter_lines():
@@ -131,6 +140,70 @@ def view_logs_stream_proxy():
                     yield line.decode("utf-8") + "\n"
 
     return Response(generate(), mimetype="text/event-stream")
+
+@app.route("/logs/stream-proxy")
+def view_logs_stream_proxy():
+    if "token" not in session:
+        return "Unauthorized", 401
+
+    token = session["token"]
+    q_user = request.args.get("username", "")
+    q_exp = request.args.get("experiment_id", "")
+    q_group = request.args.get("group", "")
+
+    def generate():
+        headers = {"Authorization": f"Bearer {token}"}
+        params = {
+            "username": q_user,
+            "experiment_id": q_exp,
+            "group": q_group
+        }
+        with requests.get(
+            f"{LOGGER_URL}/stream/filter",
+            headers=headers,
+            params=params,
+            stream=True
+        ) as r:
+            for line in r.iter_lines():
+                if line:
+                    yield line.decode("utf-8") + "\n"
+
+    return Response(generate(), mimetype="text/event-stream")
+
+@app.route("/logs/filter")
+def filter_logs():
+    if "token" not in session:
+        return redirect(url_for("login"))
+
+    username = request.args.get("username", "")
+    experiment_id = request.args.get("experiment_id", "")
+    group = request.args.get("group", "")
+    page = int(request.args.get("page", 1))
+
+    try:
+        response = requests.get(
+            f"{LOGGER_URL}/logs/filter",
+            params={
+                "username": username,
+                "experiment_id": experiment_id,
+                "group": group,
+                "page": page,
+                "per_page": 20
+            },
+            headers={"Authorization": f"Bearer {session['token']}"},
+            timeout=3
+        )
+        data = response.json()
+        logs = data.get("logs", [])
+        total_pages = data.get("total_pages", 1)
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch filtered logs: {e}")
+        logs = ["[Unable to retrieve logs]"]
+        total_pages = 1
+
+    return render_template("logs_filter.html", logs=logs, page=page, total_pages=total_pages,
+                           username=username, experiment_id=experiment_id, group=group)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

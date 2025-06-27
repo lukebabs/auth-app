@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <title>Filtered Logs</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    #log-output { max-height: 400px; overflow-y: auto; border: 1px solid #ccc; background: #f9f9f9; padding: 1rem; font-family: monospace; }
+    #stream-toggle { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h2>Login Logs Viewer</h2>
+
+  <form method="get" id="filter-form">
+    <label>Username: <input type="text" name="username" value="{{ username }}"></label>
+    <label>Experiment ID: <input type="text" name="experiment_id" value="{{ experiment_id }}"></label>
+    <label>Group: <input type="text" name="group" value="{{ group }}"></label>
+    <button type="submit">Filter</button>
+    <label id="stream-toggle">
+      <input type="checkbox" id="live-toggle"> Live stream
+    </label>
+  </form>
+
+  <hr>
+
+  <div id="log-output">
+    <ul id="log-list">
+      {% for log in logs %}
+        <li>{{ log }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  {% if total_pages > 1 %}
+    <div>
+      Pages:
+      {% for p in range(1, total_pages + 1) %}
+        <a href="?username={{ username }}&experiment_id={{ experiment_id }}&group={{ group }}&page={{ p }}">{{ p }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <script>
+    const logList = document.getElementById("log-list");
+    const liveToggle = document.getElementById("live-toggle");
+    const logOutput = document.getElementById("log-output");
+
+    let streamSource = null;
+
+    liveToggle.addEventListener("change", () => {
+      if (liveToggle.checked) {
+        logList.innerHTML = "";
+        const params = new URLSearchParams(window.location.search);
+        const streamUrl = `/logs/stream-proxy?` + params.toString();
+        streamSource = new EventSource(streamUrl);
+        streamSource.onmessage = (e) => {
+          const li = document.createElement("li");
+          li.textContent = e.data;
+          logList.appendChild(li);
+          logOutput.scrollTop = logOutput.scrollHeight;
+        };
+        streamSource.onerror = (e) => {
+          console.error("Stream error:", e);
+          streamSource.close();
+        };
+      } else {
+        if (streamSource) {
+          streamSource.close();
+          streamSource = null;
+          location.reload();  // Refresh to restore static view
+        }
+      }
+    });
+  </script>
+</body>
+</html>
