@@ -5,19 +5,19 @@ from sqllite_create import initialize_database
 import jwt
 import os
 import requests
+import hashlib
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY")  # Separate from JWT
+app.secret_key = os.environ.get("SECRET_KEY")
 JWT_SECRET = os.environ.get("JWT_SECRET")
 LOGGER_URL = os.environ.get("LOGGER_URL")
+EXPERIMENT_ID = os.environ.get("EXPERIMENT_ID", "exp-default")
 
-if not JWT_SECRET:
-    raise RuntimeError("JWT_SECRET is not set")
-if not LOGGER_URL:
-    raise RuntimeError("LOGGER_URL is not set")
+if not JWT_SECRET or not LOGGER_URL:
+    raise RuntimeError("JWT_SECRET and LOGGER_URL must be set")
 
 DATABASE = "users.db"
 initialize_database()
@@ -33,6 +33,9 @@ def close_db(e=None):
     if db is not None:
         db.close()
 
+def assign_ab_group(username):
+    return "A" if int(hashlib.md5(username.encode()).hexdigest(), 16) % 2 == 0 else "B"
+
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -43,6 +46,10 @@ def login():
 
         if user and check_password_hash(user[2], password):
             session["user"] = username
+            group = assign_ab_group(username)
+            session["ab_group"] = group
+            session["experiment_id"] = EXPERIMENT_ID
+
             token = jwt.encode({"user": username}, JWT_SECRET, algorithm="HS256")
             if isinstance(token, bytes):
                 token = token.decode("utf-8")
@@ -52,7 +59,9 @@ def login():
                 requests.post(f"{LOGGER_URL}/log", json={
                     "username": username,
                     "ip": request.remote_addr,
-                    "token": token
+                    "token": token,
+                    "group": group,
+                    "experiment_id": EXPERIMENT_ID
                 })
             except Exception as e:
                 print(f"Failed to log login event: {e}")
@@ -66,7 +75,8 @@ def login():
 def dashboard():
     if "user" not in session:
         return redirect(url_for("login"))
-    return render_template("dashboard.html", user=session["user"], token=session.get("token", ""))
+    group = session.get("ab_group", "A")
+    return render_template(f"dashboard_{group.lower()}.html", user=session["user"], token=session.get("token", ""))
 
 @app.route("/logout")
 def logout():
