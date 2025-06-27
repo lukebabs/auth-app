@@ -6,18 +6,14 @@
 </head>
 <body>
   <h2>Welcome, {{ user }} to the main dashboard!</h2>
-    <p>You have successfully logged in.</p>
-    <p>Your token is: <strong>{{ token }}</strong></p>
-  <p>Click below to see Logs</p>
-  <p><a href="/logs">View Logs</a></p>
-  <p>Click below to see Live Logs</p>
-  <p><a href="/logs/stream">View Live Logs</a></p>
-  <p>Click below to go to Bluefish</p>
-    <a href="https://bluefish.impvdemo.com?token={{ token }}">Go to Bluefish</a>
+  <p>You have successfully logged in.</p>
+  <p>Your token is: <strong>{{ token }}</strong></p>
 
-  <p>Click before for A/B Tests Filtered Logs</p>
-    <a href="/logs/filter">Filtered Logs</a>
-  <p>logout <a href="/logout">here</a></p>
+<p>Click below to go to Bluefish App</p>
+  <a href="https://bluefish.impvdemo.com?token={{ token }}">Go to Bluefish</a>
+<p>Click below for A/B Tests Filtered Logs</p>
+  <a href="/logs/filter">Filtered Logs</a>
+<p>logout <a href="/logout">here</a></p>
 
 </body>
 </html>
