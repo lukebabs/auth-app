@@ -1,23 +1,54 @@
 <!doctype html>
 <html>
-<head><title>Live Logs</title></head>
+<head>
+  <title>Live Login Logs</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f4f4f4;
+    }
+    h2 {
+      margin-bottom: 1rem;
+    }
+    #log-container {
+      list-style: none;
+      padding: 0;
+      font-family: monospace;
+      background: #fff;
+      border: 1px solid #ccc;
+      max-height: 400px;
+      overflow-y: scroll;
+    }
+    #log-container li {
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid #eee;
+    }
+  </style>
+</head>
 <body>
   <h2>Streaming Logs (Live)</h2>
   <ul id="log-container"></ul>
 
   <script>
-    const token = "{{ token }}";
     const logContainer = document.getElementById("log-container");
-    const eventSource = new EventSource("{{ url_for('view_logs_stream_proxy') }}");
 
-    eventSource.onmessage = function(e) {
+    const eventSource = new EventSource("/logs/stream-proxy");
+
+    eventSource.onopen = () => {
+      console.log("✅ Stream connected");
+    };
+
+    eventSource.onmessage = (e) => {
+      console.log("📥", e.data);
       const li = document.createElement("li");
       li.textContent = e.data;
       logContainer.appendChild(li);
+      logContainer.scrollTop = logContainer.scrollHeight; // auto-scroll
     };
 
-    eventSource.onerror = function(e) {
-      console.error("Stream error:", e);
+    eventSource.onerror = (e) => {
+      console.error("❌ Stream error", e);
       eventSource.close();
     };
   </script>

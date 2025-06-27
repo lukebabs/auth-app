@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, g, Response
 import sqlite3
-from werkzeug.security import check_password_hash
-from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from sqllite_create import initialize_database
 import jwt
 import os
@@ -11,11 +10,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("JWT_SECRET")
+app.secret_key = os.environ.get("SECRET_KEY")  # Separate from JWT
 JWT_SECRET = os.environ.get("JWT_SECRET")
+LOGGER_URL = os.environ.get("LOGGER_URL")
+
 if not JWT_SECRET:
     raise RuntimeError("JWT_SECRET is not set")
-LOGGER_URL = os.environ.get("LOGGER_URL")
+if not LOGGER_URL:
+    raise RuntimeError("LOGGER_URL is not set")
 
 DATABASE = "users.db"
 initialize_database()
@@ -39,27 +41,26 @@ def login():
         db = get_db()
         user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
-        if user and check_password_hash(user[2], password):  # user[2] is password_hash
+        if user and check_password_hash(user[2], password):
             session["user"] = username
-            # Generate JWT token
             token = jwt.encode({"user": username}, JWT_SECRET, algorithm="HS256")
-            if isinstance(token, bytes):  # PyJWT 1.x behavior
+            if isinstance(token, bytes):
                 token = token.decode("utf-8")
             session["token"] = token
+
             try:
-                requests.post(LOGGER_URL, json={
+                requests.post(f"{LOGGER_URL}/log", json={
                     "username": username,
                     "ip": request.remote_addr,
                     "token": token
                 })
             except Exception as e:
                 print(f"Failed to log login event: {e}")
+
             return redirect(url_for("dashboard"))
-            # return redirect(f"https://bluefish.impvdemo.com?token={token}")  # External redirect
         else:
             return render_template("login.html", error="Invalid credentials")
     return render_template("login.html")
-
 
 @app.route("/dashboard")
 def dashboard():
@@ -80,7 +81,7 @@ def view_logs():
     page = int(request.args.get("page", 1))
     try:
         response = requests.get(
-            os.environ.get("LOGGER_URL") + "/logs",
+            f"{LOGGER_URL}/logs",
             params={"page": page, "per_page": 20},
             headers={"Authorization": f"Bearer {session['token']}"},
             timeout=3
@@ -106,12 +107,14 @@ def view_logs_stream_proxy():
     if "token" not in session:
         return "Unauthorized", 401
 
+    token = session["token"]
+
     def generate():
-        headers = {"Authorization": f"Bearer {session['token']}"}
+        headers = {"Authorization": f"Bearer {token}"}
         with requests.get(
-            os.environ["LOGGER_URL"].replace("/log", "/stream"),
+            f"{LOGGER_URL}/stream",
             headers=headers,
-            stream=True,
+            stream=True
         ) as r:
             for line in r.iter_lines():
                 if line:
