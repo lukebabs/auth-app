@@ -141,35 +141,6 @@ def view_logs_stream_proxy():
 
     return Response(generate(), mimetype="text/event-stream")
 
-@app.route("/logs/stream-proxy")
-def view_logs_stream_proxy():
-    if "token" not in session:
-        return "Unauthorized", 401
-
-    token = session["token"]
-    q_user = request.args.get("username", "")
-    q_exp = request.args.get("experiment_id", "")
-    q_group = request.args.get("group", "")
-
-    def generate():
-        headers = {"Authorization": f"Bearer {token}"}
-        params = {
-            "username": q_user,
-            "experiment_id": q_exp,
-            "group": q_group
-        }
-        with requests.get(
-            f"{LOGGER_URL}/stream/filter",
-            headers=headers,
-            params=params,
-            stream=True
-        ) as r:
-            for line in r.iter_lines():
-                if line:
-                    yield line.decode("utf-8") + "\n"
-
-    return Response(generate(), mimetype="text/event-stream")
-
 @app.route("/logs/filter")
 def filter_logs():
     if "token" not in session:
