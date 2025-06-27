@@ -9,13 +9,15 @@
   <p>You have successfully logged in.</p>
   <p>Your token is: <strong>{{ token }}</strong></p>
 
-<p>Click below to go to Bluefish App</p>
-  <a href="https://bluefish.impvdemo.com?token={{ token }}">Go to Bluefish</a>
 <p>Click below for A/B Tests Filtered Logs</p>
   <a href="/logs/filter">Filtered Logs</a>
 <p>Click below for A/B Tests Visuals</p>
   <a href="/results">A/B Tests Visuals</a>
-<p>logout <a href="/logout">here</a></p>
+
+<p>Click below to forward user's token from serverless app to Bluefish App in EC2</p>
+  <a href="https://bluefish.impvdemo.com?token={{ token }}">Go to Bluefish</a>
+<p>
+</p><p>logout <a href="/logout">here</a></p>
 
 </body>
 </html>
